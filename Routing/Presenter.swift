@@ -7,7 +7,9 @@ struct Presenter {
         let boundingRects = tracks.values.map { $0.boundingMapRect }
         return boundingRects.reduce(MKMapRect.null) { $0.union($1) }
     }
+}
 
+extension Presenter {
     mutating func add(_ track: Track) -> MKPolygon {
         let coords = track.clCoordinates
         let polygon = MKPolygon(coordinates: coords, count: coords.count)
