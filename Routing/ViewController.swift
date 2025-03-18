@@ -1,18 +1,10 @@
-//
-//  ViewController.swift
-//  Routing
-//
-//  Created by Chris Eidhof on 18.10.18.
-//  Copyright © 2018 objc.io. All rights reserved.
-//
-
 import UIKit
 import MapKit
 
-class ViewController: UIViewController {
-    let mapView = MKMapView()
-    var tracks: [Track:MKPolygon] = [:]
-    
+final class ViewController: UIViewController {
+    private let mapView = MKMapView()
+    private var presenter = Presenter()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         mapView.delegate = self
@@ -26,17 +18,30 @@ class ViewController: UIViewController {
                 self.updateMapView(tracks)
             }
         }
+        mapView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped)))
     }
-    
+}
+
+extension ViewController {
+    @objc func tapped(_ recognizer: UITapGestureRecognizer) {
+        let tapLoc = recognizer.location(in: mapView)
+        let tapCoord = mapView.convert(tapLoc, toCoordinateFrom: mapView)
+        let (track, closestPoint) = presenter.closest(to: tapCoord)!
+        let closestInMapView = mapView.convert(closestPoint, toPointTo: mapView)
+        if closestInMapView.distance(to: tapLoc) < 44/2 {
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = closestPoint
+            annotation.title = track.name
+            mapView.addAnnotation(annotation)
+        }
+    }
+
     func updateMapView(_ newTracks: [Track]) {
         for t in newTracks {
-            let coords = t.coordinates.map { CLLocationCoordinate2D($0.coordinate) }
-            let polygon = MKPolygon(coordinates: coords, count: coords.count)
-            tracks[t] = polygon
+            let polygon = presenter.add(t)
             mapView.addOverlay(polygon)
         }
-        let boundingRects = tracks.values.map { $0.boundingMapRect }
-        let boundingRect = boundingRects.reduce(MKMapRect.null) { $0.union($1) }
+        let boundingRect = presenter.boundingRect
         mapView.setVisibleMapRect(boundingRect, edgePadding: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10), animated: true)
     }
 }
@@ -46,17 +51,11 @@ extension ViewController: MKMapViewDelegate {
         guard let p = overlay as? MKPolygon else {
             return MKOverlayRenderer(overlay: overlay)
         }
-        let (track, _) = tracks.first(where: { (track, poly) in poly == p })!
+        let track = presenter.track(for: p)!
         let r = MKPolygonRenderer(polygon: p)
         r.lineWidth = 1
         r.strokeColor = track.color.uiColor
         r.fillColor = track.color.uiColor.withAlphaComponent(0.2)
         return r
-    }
-}
-
-extension CLLocationCoordinate2D {
-    init(_ coord: Coordinate) {
-        self.init(latitude: coord.latitude, longitude: coord.longitude)
     }
 }
