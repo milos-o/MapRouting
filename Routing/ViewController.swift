@@ -2,8 +2,12 @@ import UIKit
 import MapKit
 
 final class ViewController: UIViewController {
+    // MARK: - Properties -
+
     private let mapView = MKMapView()
     private var presenter = Presenter()
+
+    // MARK: - Lifecylce -
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,6 +25,10 @@ final class ViewController: UIViewController {
         mapView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped)))
     }
 }
+
+// MARK: - Extensions -
+
+// MARK: - MapView actions -
 
 extension ViewController {
     @objc func tapped(_ recognizer: UITapGestureRecognizer) {
@@ -42,9 +50,15 @@ extension ViewController {
             mapView.addOverlay(polygon)
         }
         let boundingRect = presenter.boundingRect
-        mapView.setVisibleMapRect(boundingRect, edgePadding: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10), animated: true)
+        mapView.setVisibleMapRect(
+            boundingRect,
+            edgePadding: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10),
+            animated: true
+        )
     }
 }
+
+// MARK: - Delegate conformance -
 
 extension ViewController: MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
